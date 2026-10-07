@@ -13,6 +13,25 @@
 - `CF Server Monitor` WebSocket 实时更新与断线重连
 - 单后端 Turnstile 验证
 - 深色、浅色和跟随系统主题
+- 遵循后端 `sysConfig.show_price` 开关控制价格信息的可见性
+
+## 价格信息可见性（`sysConfig.show_price`）
+
+主题读取 `/api/servers` 响应中的 `sysConfig.show_price`，按官方语义控制价格类信息的展示：
+
+| `show_price`         | 访客（未登录） | 管理员（已登录） |
+| -------------------- | -------------- | ---------------- |
+| `true`               | 可见           | 可见             |
+| `false`              | **不可见**     | 可见             |
+| 字段缺失（旧版后端） | 可见           | 可见             |
+
+关闭时访客看不到以下内容，其余指标不受影响：
+
+- 节点卡片与列表的「费用」行中的价格（**剩余时间仍保留**，例如 `+120 天`）
+- 首页汇总卡片中的「剩余价值」卡片，以及其展开面板里的总价值 / 月均支出 / 今日汇率
+- 节点详情页的「节点价格」「月均支出」「剩余价值」卡片（**剩余时间卡片保留**）
+
+管理员身份来自 `/api/config` 返回的 `authorization`（即请求携带了有效 JWT），因此从后台登录后访问主题页依然可以看到价格信息。
 
 ## 主题设置
 
@@ -185,6 +204,23 @@ bun run preview
 ```
 
 自定义域名和其他静态平台通常保留 `BASE_PATH=./` 即可。
+
+## 本地验证
+
+`tools/` 下带有一套不依赖外部后端的验证脚本，用于回归 `show_price` 门控行为：
+
+```bash
+# 终端 A：启动 mock 后端（可切换开关）
+MOCK_SHOW_PRICE=false MOCK_AUTHORIZATION=false node tools/mock-cfsm-server.mjs
+
+# 终端 B：验证数据链路（/api/servers → store → canViewPrice）
+MOCK_SHOW_PRICE=false node tools/run-pipeline-verify.mjs
+
+# 验证组件渲染（真实 Vue 编译管线下的 SSR 断言）
+node tools/run-ssr-verify.mjs
+```
+
+`run-ssr-verify.mjs` 覆盖四种组合：访客/管理员 × `show_price` 开/关，以及旧版后端字段缺失的兼容路径。
 
 ### 主题开发文档：
 

@@ -12,6 +12,9 @@
   },
   "scripts": {
     "dev": "vite",
+    "mock": "node tools/mock-cfsm-server.mjs",
+    "verify": "node tools/run-ssr-verify.mjs",
+    "verify:pipeline": "node tools/run-pipeline-verify.mjs",
     "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
     "build-only": "vite build",
